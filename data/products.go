@@ -28,6 +28,21 @@ func (p *Products) ToJSON(w io.Writer) error {
 	return e.Encode(p)
 }
 
+func (p *Product) FromJSON(r io.Reader) error {
+	e := json.NewDecoder(r)
+	return e.Decode(p)
+}
+
+func getNextID() int {
+	lp := productlsit[len(productlsit)-1]
+	return lp.ID + 1
+}
+
+func AddProduct(p *Product) {
+	p.ID = getNextID()
+	productlsit = append(productlsit, p)
+}
+
 var productlsit = []*Product{
 	&Product{
 		ID:          1,

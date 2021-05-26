@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -19,25 +18,40 @@ func NewProduct(l *log.Logger) *Product {
 func (p *Product) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	// Handle an GET
 	if r.Method == http.MethodGet {
-		p.convertJSONencode(rw, r)
+		p.productGET(rw, r)
 		return
 	}
-	// Handle an update
+	if r.Method == http.MethodPost {
+		p.productPOST(rw, r)
+		return
+	}
+
 	rw.WriteHeader(http.StatusMethodNotAllowed)
 }
 
-// using marshal, call in ServeHTTP
-func (p *Product) convertJSONmarshal(rw http.ResponseWriter, h *http.Request) {
+func (p *Product) productPOST(rw http.ResponseWriter, r *http.Request) {
+	p.l.Println("Handle POST successfully")
+	pl := &data.Product{}
+	err := pl.FromJSON(r.Body)
+	if err != nil {
+		http.Error(rw, "Unable to unmarshal", http.StatusBadRequest)
+	}
+	p.l.Printf("pl: %#v", pl)
+	data.AddProduct(pl)
+}
+
+func (p *Product) productGET(rw http.ResponseWriter, r *http.Request) {
+
+	/* marshal
 	lp := data.GetProducts()
 	d, err := json.Marshal(lp)
 	if err != nil {
 		http.Error(rw, "Unable to marshal json", http.StatusInternalServerError)
 	}
 	rw.Write(d)
-}
+	*/
 
-// using encode, call in ServeHTTP
-func (p *Product) convertJSONencode(rw http.ResponseWriter, h *http.Request) {
+	// encode
 	lp := data.GetProducts()
 	err := lp.ToJSON(rw)
 	if err != nil {
