@@ -13,15 +13,18 @@ import (
 
 func main() {
 
-	l := log.New(os.Stdout, "test-api", log.LstdFlags)
+	l := log.New(os.Stdout, "product-api", log.LstdFlags)
 	hello_handle := handlers.NewHello(l)
 	product_handle := handlers.NewProduct(l)
 	goodbye_handle := handlers.NewGoodbye(l)
 
+	// server mux is a multiplexer so it allows you to have multiple handlers and
+	// contains logic to be able to determine which one to call based on the path
 	sm := http.NewServeMux()
 	sm.Handle("/", hello_handle)
 	sm.Handle("/goodbye", goodbye_handle)
 	sm.Handle("/product", product_handle)
+	sm.Handle("/product/", product_handle)
 
 	s := &http.Server{
 		Addr:         ":9090",
@@ -31,6 +34,7 @@ func main() {
 		WriteTimeout: 1 * time.Second,
 	}
 
+	// create a thread running this func
 	go func() {
 		// this will block
 		err := s.ListenAndServe()
@@ -39,6 +43,7 @@ func main() {
 		}
 	}()
 
+	// listen and catch signal
 	sigChan := make(chan os.Signal)
 	signal.Notify(sigChan, os.Interrupt)
 	signal.Notify(sigChan, os.Kill)
@@ -46,6 +51,10 @@ func main() {
 	sig := <-sigChan
 	l.Println("Recieved terminate, graceful shutdown", sig)
 
+	// Cancel context and release resources
 	timeout_context, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	s.Shutdown(timeout_context)
+
+	// server mux also implement the handler interface
+	// http.ListenAndServe(":9090", sm)
 }
