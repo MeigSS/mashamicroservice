@@ -21,17 +21,6 @@ func NewProduct(l *log.Logger) *Products {
 
 func (p *Products) ProductGET(rw http.ResponseWriter, r *http.Request) {
 	lp := data.GetProducts()
-
-	/*// using mashal
-	d, err := json.Marshal(lp)
-	if err != nil {
-		http.Error(rw, "Unable to marshal json", http.StatusInternalServerError)
-	}
-	rw.Write(d)
-	*/
-
-	// using encode
-	// this will be faster than using mashal
 	err := lp.ToJSON(rw)
 	if err != nil {
 		http.Error(rw, "Unable to marshal json", http.StatusInternalServerError)
@@ -69,6 +58,18 @@ func (p Products) MiddlewareValidateProduct(next http.Handler) http.Handler {
 			http.Error(rw, "Error reading product", http.StatusBadRequest)
 			return
 		}
+
+		err = prod.Validate()
+		if err != nil {
+			p.l.Println("[ERROR] validating product", err)
+			http.Error(
+				rw,
+				fmt.Sprintf("Error validating product: %s", err),
+				http.StatusBadRequest,
+			)
+			return
+		}
+
 		ctx := context.WithValue(r.Context(), KeyProduct{}, prod)
 		r = r.WithContext(ctx)
 		next.ServeHTTP(rw, r)
