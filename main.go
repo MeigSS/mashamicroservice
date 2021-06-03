@@ -8,23 +8,37 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/masha/WebServer/handlers"
 )
 
 func main() {
-
+	// New a Logger with description @param1 and tag @param2
 	l := log.New(os.Stdout, "product-api", log.LstdFlags)
-	hello_handle := handlers.NewHello(l)
-	product_handle := handlers.NewProduct(l)
-	goodbye_handle := handlers.NewGoodbye(l)
 
-	// server mux is a multiplexer so it allows you to have multiple handlers and
-	// contains logic to be able to determine which one to call based on the path
-	sm := http.NewServeMux()
-	sm.Handle("/", hello_handle)
-	sm.Handle("/goodbye", goodbye_handle)
-	sm.Handle("/product", product_handle)
-	sm.Handle("/product/", product_handle)
+	// New a product, which implement http request function
+	product_handle := handlers.NewProduct(l)
+
+	// New a router instance
+	sm := mux.NewRouter()
+
+	// Methods register a new [route] with a matcher for http methods.
+	// Subrouter create a [subrouter] for the route.
+	// Subrouter will test inner routes only if the parent route matched.
+	//						this is a router
+	//							|------- "/" goes here
+	//							|------- "/ppp" goes here if registered
+	// "GET"(this is a route) ---------- .............
+	getRouter := sm.Methods("GET").Subrouter()
+	getRouter.HandleFunc("/", product_handle.ProductGET)
+
+	postRouter := sm.Methods(http.MethodPost).Subrouter()
+	postRouter.HandleFunc("/", product_handle.ProductPOST)
+	postRouter.Use(product_handle.MiddlewareValidateProduct)
+
+	putRouter := sm.Methods(http.MethodPut).Subrouter()
+	putRouter.HandleFunc("/{id:[0-9]+}", product_handle.ProductPUT)
+	putRouter.Use(product_handle.MiddlewareValidateProduct)
 
 	s := &http.Server{
 		Addr:         ":9090",
@@ -34,9 +48,7 @@ func main() {
 		WriteTimeout: 1 * time.Second,
 	}
 
-	// create a thread running this func
 	go func() {
-		// this will block
 		err := s.ListenAndServe()
 		if err != nil {
 			l.Fatal(err)

@@ -1,12 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
-	"regexp"
 	"strconv"
 
+	"github.com/gorilla/mux"
 	"github.com/masha/WebServer/data"
 )
 
@@ -18,51 +19,7 @@ func NewProduct(l *log.Logger) *Products {
 	return &Products{l}
 }
 
-func (p *Products) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-
-	if r.Method == http.MethodGet {
-		p.productGET(rw, r)
-		return
-	}
-	if r.Method == http.MethodPost {
-		p.productPOST(rw, r)
-		return
-	}
-	if r.Method == http.MethodPut {
-
-		p.l.Println("Handle PUT")
-		re := regexp.MustCompile(`/([0-9]+)`)
-		g := re.FindAllStringSubmatch(r.URL.Path, -1)
-
-		if len(g) != 1 {
-			p.l.Println("Invalid URI1")
-			http.Error(rw, "Invalid URI", http.StatusBadRequest)
-			return
-		}
-		if len(g[0]) != 2 {
-			p.l.Println("Invalid URI2")
-			http.Error(rw, "Invalid URI", http.StatusBadRequest)
-			return
-		}
-
-		idString := g[0][1]
-		id, err := strconv.Atoi(idString)
-		if err != nil {
-			p.l.Println("Invalid URI3")
-			http.Error(rw, "Invalid URI", http.StatusBadRequest)
-			return
-		}
-		p.l.Println("got id ", id)
-
-		p.productPUT(id, rw, r)
-
-		return
-	}
-
-	rw.WriteHeader(http.StatusMethodNotAllowed)
-}
-
-func (p *Products) productGET(rw http.ResponseWriter, r *http.Request) {
+func (p *Products) ProductGET(rw http.ResponseWriter, r *http.Request) {
 	lp := data.GetProducts()
 
 	/*// using mashal
@@ -82,30 +39,38 @@ func (p *Products) productGET(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (p *Products) productPOST(rw http.ResponseWriter, r *http.Request) {
+func (p *Products) ProductPOST(rw http.ResponseWriter, r *http.Request) {
 	p.l.Println("Just a test, post work well")
 
-	prod := &data.Product{}
-	err := prod.FromJSON(r.Body)
-	if err != nil {
-		http.Error(rw, "Unable unmarshal JSON", http.StatusBadRequest)
-		return
-	}
-	p.l.Printf("Prod: %#v", prod)
-	data.AddProduct(prod)
+	prod := r.Context().Value(KeyProduct{}).(data.Product)
+	data.AddProduct(&prod)
 }
 
-func (p *Products) productPUT(id int, rw http.ResponseWriter, r *http.Request) {
+func (p *Products) ProductPUT(rw http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	temp := vars["id"]
+	id, _ := strconv.Atoi(temp)
+
 	p.l.Println("Handle PUT")
 
-	prod := &data.Product{}
+	prod := r.Context().Value(KeyProduct{}).(data.Product)
+	data.UpdateProduct(id, &prod)
+	fmt.Println("id is ", id)
+}
 
-	err := prod.FromJSON(r.Body)
-	fmt.Printf("%#v", prod)
-	if err != nil {
-		http.Error(rw, "Unable to unmarshal", http.StatusBadRequest)
-		return
-	}
+type KeyProduct struct{}
 
-	data.UpdateProduct(id, prod)
+func (p Products) MiddlewareValidateProduct(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		prod := data.Product{}
+		err := prod.FromJSON(r.Body)
+		if err != nil {
+			p.l.Println("[ERROR] deserializing product", err)
+			http.Error(rw, "Error reading product", http.StatusBadRequest)
+			return
+		}
+		ctx := context.WithValue(r.Context(), KeyProduct{}, prod)
+		r = r.WithContext(ctx)
+		next.ServeHTTP(rw, r)
+	})
 }
