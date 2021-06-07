@@ -25,10 +25,21 @@ import (
 
 // A list of products returns in response
 // swagger:response productsResponse
-type productsResponse struct {
+type productsResponseWrapper struct {
 	// All products in the system
 	// in:body
 	Body []data.Product
+}
+
+// swagger:response noContent
+type productsNoContent struct{}
+
+// swagger:parameters deleteProduct
+type productIdParameterWrapper struct {
+	// The id of the product to delete from the database
+	// in:path
+	// required:true
+	ID int `json:"id"`
 }
 
 type Products struct {
