@@ -23,6 +23,7 @@ type Product struct {
 
 func (p *Product) Validate() error {
 	validate := validator.New()
+	// Register new validation and function
 	validate.RegisterValidation("sku", validateSKU)
 	return validate.Struct(p)
 }
@@ -77,6 +78,15 @@ func GetProducts() Products {
 func AddProduct(p *Product) {
 	p.ID = getNextID()
 	productList = append(productList, p)
+}
+
+func DelProduct(id int) {
+	for index, v := range productList {
+		if v.ID == id {
+			productList = append(productList[:index], productList[index+1:]...)
+			break
+		}
+	}
 }
 
 func getNextID() int {

@@ -32,6 +32,9 @@ func main() {
 	getRouter := sm.Methods("GET").Subrouter()
 	getRouter.HandleFunc("/", product_handle.ProductGET)
 
+	delRouter := sm.Methods(http.MethodDelete).Subrouter()
+	delRouter.HandleFunc("/{id:[0-9]+}", product_handle.ProductDELETE)
+
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
 	postRouter.HandleFunc("/", product_handle.ProductPOST)
 	postRouter.Use(product_handle.MiddlewareValidateProduct)
