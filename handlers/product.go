@@ -42,6 +42,14 @@ type productIdParameterWrapper struct {
 	ID int `json:"id"`
 }
 
+// swagger:parameters postProduct putProduct
+type productPostParameterWrapper struct {
+	// The product going to be post or put
+	// in:body
+	// required:true
+	Body data.Product
+}
+
 type Products struct {
 	l *log.Logger
 }

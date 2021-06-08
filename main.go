@@ -31,17 +31,17 @@ func main() {
 	//							|------- "/ppp" goes here if registered
 	// "GET"(this is a route) ---------- .............
 	getRouter := sm.Methods("GET").Subrouter()
-	getRouter.HandleFunc("/", product_handle.ProductGET)
+	getRouter.HandleFunc("/products", product_handle.ProductGET)
 
 	delRouter := sm.Methods(http.MethodDelete).Subrouter()
-	delRouter.HandleFunc("/{id:[0-9]+}", product_handle.ProductDELETE)
+	delRouter.HandleFunc("/products/{id:[0-9]+}", product_handle.ProductDELETE)
 
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
-	postRouter.HandleFunc("/", product_handle.ProductPOST)
+	postRouter.HandleFunc("/products", product_handle.ProductPOST)
 	postRouter.Use(product_handle.MiddlewareValidateProduct)
 
 	putRouter := sm.Methods(http.MethodPut).Subrouter()
-	putRouter.HandleFunc("/{id:[0-9]+}", product_handle.ProductPUT)
+	putRouter.HandleFunc("/products", product_handle.ProductPUT)
 	putRouter.Use(product_handle.MiddlewareValidateProduct)
 
 	opts := middleware.RedocOpts{SpecURL: "/swagger.yaml"}

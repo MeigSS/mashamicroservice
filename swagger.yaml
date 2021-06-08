@@ -41,6 +41,30 @@ paths:
           $ref: '#/responses/productsResponse'
       tags:
       - products
+    post:
+      description: Return None
+      operationId: postProduct
+      parameters:
+      - description: The product going to be post or put
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/Product'
+      tags:
+      - products
+    put:
+      description: Return None
+      operationId: putProduct
+      parameters:
+      - description: The product going to be post or put
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/Product'
+      tags:
+      - products
   /products/{id}:
     delete:
       description: Returns a list of products

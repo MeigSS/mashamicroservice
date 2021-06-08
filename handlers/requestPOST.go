@@ -6,6 +6,9 @@ import (
 	"github.com/masha/WebServer/data"
 )
 
+// swagger:route POST /products products postProduct
+// Return None
+
 func (p *Products) ProductPOST(rw http.ResponseWriter, r *http.Request) {
 	p.l.Println("Just a test, post work well")
 
